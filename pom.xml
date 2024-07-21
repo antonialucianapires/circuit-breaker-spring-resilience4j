@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.example.circuitbreaker</groupId>
-    <artifactId>projeto-principal</artifactId>
+    <artifactId>project-principal</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>produto-service</module>
-        <module>avaliacao-service</module>
+        <module>products-service</module>
+        <module>reviews-service</module>
     </modules>
 
     <dependencyManagement>

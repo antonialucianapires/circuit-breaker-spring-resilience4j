@@ -1,8 +1,8 @@
-produto-service/mvnw.cmd
-produto-service/mvnw
-produto-service/target/
-produto-service/.mvn
-avaliacao-service/mvnw.cmd
-avaliacao-service/mvnw
-avaliacao-service/.mvn
-avaliacao-service/target/
+products-service/mvnw.cmd
+products-service/mvnw
+products-service/target/
+products-service/.mvn
+reviews-service/mvnw.cmd
+reviews-service/mvnw
+reviews-service/.mvn
+reviews-service/target/
