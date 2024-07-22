@@ -1,5 +1,6 @@
 package com.example.produto_service.infra.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -7,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Log4j2
 @Component
@@ -14,26 +16,37 @@ import java.util.*;
 public class ReviewClientImpl implements ReviewClient {
 
     private final RestTemplate restTemplate;
-    private final static String API_URL = UriComponentsBuilder
+    private static final ConcurrentHashMap<Long, List<ReviewResponse>> reviewCache = new ConcurrentHashMap<>();
+    private static final String API_URL = UriComponentsBuilder
             .fromHttpUrl("http://localhost:8082/reviews")
             .queryParam("productId", "{productId}")
             .encode()
             .toUriString();
+
     @Override
-    public List<ReviewResponse> reviewsByProductId(Long productId) {
-        return request(productId);
+    @CircuitBreaker(name = "reviewsCB", fallbackMethod = "retrieveReviewsFromCache")
+    public List<ReviewResponse> getReviewsByProductId(Long productId) {
+        return fetchReviewsFromAPI(productId);
     }
 
-    private List<ReviewResponse> request(Long productId) {
-       Map<String, Object> params = Map.of("productId", productId);
-       ReviewResponse[] reviews;
-       log.info("Requesting reviews from API for product id: {}", productId);
+    private List<ReviewResponse> fetchReviewsFromAPI(Long productId) {
+        Map<String, Object> params = Map.of("productId", productId);
+        ReviewResponse[] reviews = null;
+        log.info("Requesting reviews from API for product id: {}", productId);
         try {
             reviews = restTemplate.getForObject(API_URL, ReviewResponse[].class, params);
-        } catch (Exception e) {
-            log.error("Error getting reviews from API", e);
-            throw new RuntimeException("Error getting reviews from API", e);
+        } catch (Exception exception) {
+            log.error("Failed to fetch reviews from API for product id: {}", productId, exception);
+            throw exception;
         }
-        return reviews == null ? List.of() : Arrays.asList(reviews);
+        List<ReviewResponse> reviewsList = Arrays.asList(reviews);
+        log.info("Caching reviews for product id: {}", productId);
+        reviewCache.put(productId, reviewsList);
+        return reviewsList;
+    }
+
+    private List<ReviewResponse> retrieveReviewsFromCache(Long productId, Throwable throwable) {
+        log.error("Fallback to cache due to API error for product id: {}", productId, throwable);
+        return reviewCache.getOrDefault(productId, List.of());
     }
 }

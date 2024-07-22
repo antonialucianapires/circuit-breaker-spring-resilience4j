@@ -40,6 +40,6 @@ public class ProductController {
     }
 
     private List<ReviewResponse> fingReviewsByProductId(Long productId) {
-        return reviews.reviewsByProductId(productId);
+        return reviews.getReviewsByProductId(productId);
     }
 }
